@@ -1,0 +1,143 @@
+---
+title: "Big_Data_Phase2"
+author: "Yuraza_Qadri"
+date: "2023-04-24"
+output: html_document
+---
+
+```{r}
+require(tidyverse)
+require(tidymodels)
+library(dplyr)
+library(skimr)
+library(gapminder)
+require(ggplot2)
+library(ggridges)
+install.packages("readxl")
+library(readxl)
+
+```
+
+```{r}
+airlines_data<-read_csv("C:/Users/Lenovo/Downloads/Big_data_phase2/Dataset.csv")
+
+airlines_data
+
+airlines_test_data2<-read_excel("C:/Users/Lenovo/Downloads/Big_data_phase2/Airlines_test_data.xlsx")
+
+airlines_test_data2
+
+```
+```{r}
+# Select the numerical columns for box plot
+num_cols <- c("AirTime", "ArrDelay", "ArrTime", "CRSElapsedTime", "Distance")
+
+# Create the box plot
+boxplot(airlines_data[, num_cols], 
+        main = "Box Plot of Numerical Columns",
+        xlab = "Column Names",
+        ylab = "Values")
+```
+
+```{r}
+hist(airlines_data$ArrDelay, main = "Histogram of ArrDelay")
+```
+
+```{r}
+set.seed(321)
+
+# Create a split object
+airlines_data_split <- initial_split(airlines_data, prop = 0.80, 
+                                   strata = Delay)
+
+# Build training data set
+airlines_data_training <- airlines_data_split %>% 
+                        training()
+
+# Build testing data set
+airlines_data_testing <- airlines_data_split %>% 
+                    testing()
+```
+```{r}
+#Step-3 Feature Engineering
+
+airlines_data_training$Delay <- as.factor(airlines_data_training$Delay)
+airlines_data_testing$Delay <- as.factor(airlines_data_testing$Delay)
+airlines_test_data2$Delay <- as.factor(airlines_test_data2$Delay)
+airlines_main<-recipe(Delay~ ArrDelay, DepTime,	CRSDepTime,	ArrTime,	CRSArrTime,	UniqueCarrier,	FlightNum,	TailNum	,ActualElapsedTime,	CRSElapsedTime,	AirTime,		DepDelay,	Origin,	Dest,	Distance,	TaxiIn,	TaxiOut,	Cancelled,	Diverted,	CarrierDelay,	WeatherDelay,	NASDelay,	SecurityDelay,	LateAircraftDelay, data=airlines_data_training, family='binomial')%>%
+          step_YeoJohnson(all_numeric(), - all_outcomes()) %>% ##
+          step_dummy(all_nominal(), -all_outcomes()) %>%
+          step_nzv(all_predictors())
+```
+
+
+
+```{r}
+# Here we are preparing and baking the recipe and setting the model and creating workflow and fitting the model.
+airlines_main %>% 
+  prep() %>% 
+  bake(new_data = airlines_data_testing)
+
+lr_mod<-logistic_reg()%>%
+        set_engine('glm')
+
+
+
+airlines_workflow<-workflow()%>%
+                  add_model(lr_mod)%>%
+                  add_recipe(airlines_main)
+
+airlines_fit <- airlines_workflow%>%fit(data=airlines_data_testing)
+```
+
+
+```{r}
+tidy(airlines_fit)
+```
+```{r}
+airlines_predictions<-predict(airlines_fit, airlines_data_testing)%>%
+                bind_cols(airlines_data_testing%>%select(Delay))
+
+airlines_predictions%>%table()
+```
+```{r}
+airlines_results<- predict(airlines_fit,airlines_data_testing)%>%
+  bind_cols(airlines_data_testing%>% select(Delay))
+airlines_results
+```
+
+```{r}
+airlines_data$Delay <- factor(airlines_data$Delay)
+conf_mat(airlines_results, truth=Delay, estimate=.pred_class)
+```
+```{r}
+metrics(airlines_results, truth=Delay, estimate=.pred_class)
+```
+
+
+```{r}
+airlines_main %>% 
+  prep() %>% 
+  bake(new_data = airlines_test_data2)
+
+lr_mod<-logistic_reg()%>%
+        set_engine('glm')
+
+
+
+airlines_workflow3<-workflow()%>%
+                  add_model(lr_mod)%>%
+                  add_recipe(airlines_main)
+
+airlines_fit_new <- airlines_workflow3%>%fit(data=airlines_test_data2)
+```
+
+
+
+```{r}
+airlines_results4<-predict(airlines_fit_new, airlines_test_data2)%>%
+                bind_cols(airlines_test_data2%>%select(Delay))
+airlines_results4
+```
+
+
