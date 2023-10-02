@@ -19,11 +19,11 @@ library(readxl)
 ```
 
 ```{r}
-airlines_data<-read_csv("C:/Users/Lenovo/Downloads/Big_data_phase2/Dataset.csv")
+airlines_data<-read_csv("/Users/yurazakadri/Downloads/Backup/New folder/Big_data_phase2/2006sample.csv")
 
 airlines_data
 
-airlines_test_data2<-read_excel("C:/Users/Lenovo/Downloads/Big_data_phase2/Airlines_test_data.xlsx")
+airlines_test_data2<-read_excel("/Users/yurazakadri/Downloads/Backup/New folder/Big_data_phase2/Airlines_test_data.xlsx")
 
 airlines_test_data2
 
